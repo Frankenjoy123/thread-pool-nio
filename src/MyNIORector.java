@@ -1,9 +1,6 @@
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.Set;
 
 public class MyNIORector extends Thread {
@@ -36,6 +33,8 @@ public class MyNIORector extends Thread {
 			for(SelectionKey selectedKey:selectedKeys)
 			{
 
+				doWithSelectionKey(selectedKey);
+
 
 
 				if (selectedKey.isAcceptable()) {
@@ -48,6 +47,37 @@ public class MyNIORector extends Thread {
 
 		}
 	}
+
+
+	private void doWithSelectionKey(SelectionKey key){
+		ServerSocketChannel serverSocketChannel = null;
+		try{
+			if (key.isValid()){
+				if (key.isAcceptable()){
+					serverSocketChannel = (ServerSocketChannel) key.channel();
+					SocketChannel socketChannel = serverSocketChannel.accept();
+					try {
+						socketChannel.configureBlocking(false);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					try {
+						socketChannel.register(key.selector(),SelectionKey.OP_READ);
+					} catch (ClosedChannelException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+
+
+
+	}
+
 
 	class NIOAcceptor {
 
