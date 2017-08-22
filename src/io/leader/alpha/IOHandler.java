@@ -1,5 +1,7 @@
 package io.leader.alpha;
 
+import io.leader.bravo.LocalCmandUtil;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -115,7 +117,7 @@ public class IOHandler implements Runnable {
 		if(readedLine.startsWith("dir"))
 		{
 			readedLine="cmd  /c "+readedLine;
-			String result=LocalCmandUtil.callCmdAndgetResult(readedLine);
+			String result= LocalCmandUtil.callCmdAndgetResult(readedLine);
 			writeBuffer.put(result.getBytes("GBK"));
 			writeBuffer.put("\r\nTelnet>".getBytes());
 		}else

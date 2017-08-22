@@ -1,7 +1,5 @@
 package io.leader.bravo;
 
-import com.sun.org.apache.xpath.internal.operations.String;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -16,10 +14,10 @@ public class BravoIOHandler implements Runnable{
     private ByteBuffer writeBuffer;
     private ByteBuffer readBuffer;
 
-    private int lastReadedPos;
+    private int lastMessagePos;
 
 
-    public BravoIOHandler(SocketChannel socketChannel, Selector selector) throws IOException {
+    public BravoIOHandler(final Selector selector , SocketChannel socketChannel) throws IOException {
         this.socketChannel = socketChannel;
 
         socketChannel.configureBlocking(false);
@@ -29,36 +27,16 @@ public class BravoIOHandler implements Runnable{
         writeBuffer = ByteBuffer.allocate(1024*2);
         readBuffer = ByteBuffer.allocate(100);
 
+        //绑定会话
         selectionKey.attach(this);
-        writeBuffer.put("you are connected to 9000 port\r\n".getBytes());
+        writeBuffer.put("Welcome Leader.us Power Man Java Course ...\\r\\nTelnet".getBytes());
         writeBuffer.flip();
 
         doWriteData();
 
     }
 
-    private void doWriteData() throws IOException {
 
-        int writeSize = socketChannel.write(writeBuffer);
-        System.out.println("write to channel : " +writeSize);
-
-        if (writeBuffer.hasRemaining()){
-            System.out.println("remaining : " + writeBuffer.remaining());
-            writeBuffer.compact();
-
-            selectionKey.attach(writeBuffer);
-
-            //增加兴趣事件为write to socketchannel
-            selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
-
-        }else {
-            System.out.println("write to channel finished");
-            writeBuffer.clear();
-            //对写不感兴趣，对读感兴趣
-            selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-        }
-
-    }
 
     @Override
     public void run() {
@@ -74,15 +52,40 @@ public class BravoIOHandler implements Runnable{
                 doWriteData();
             } catch (IOException e) {
                 e.printStackTrace();
+                selectionKey.cancel();
+                try {
+                    socketChannel.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
             }
+        }
+
+    }
+
+    private void doWriteData() throws IOException {
+
+        int writeSize = socketChannel.write(writeBuffer);
+        System.out.println("write to channel : " +writeSize);
+
+        if (writeBuffer.hasRemaining()){
+            System.out.println("writed "+writeSize+" not write finished  so bind to session ,remains "+ writeBuffer.remaining());
+
+            //增加兴趣事件为write to socketchannel
+            selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+
+        }else {
+            System.out.println("write to channel finished");
+            writeBuffer.clear();
+            //对写不感兴趣，对读感兴趣
+            selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE | SelectionKey.OP_READ);
         }
 
     }
 
     private void doReadData() throws IOException {
 
-        int lastMessagePos = 0;
-        java.lang.String readLine = null;
+        String readLine = null;
 
         int readSize = socketChannel.read(readBuffer);
         System.out.println("readSize : " +readSize);
@@ -97,22 +100,23 @@ public class BravoIOHandler implements Runnable{
 
                 lastMessagePos=i;
 
-                readLine = new java.lang.String(lineBytes);
-                System.out.println("you type : " + readLine);
+                readLine = new String(lineBytes);
+                System.out.println("received line ,lenth:"+readLine.length()+" value "+readLine);
+                break;
 
             }
 
         }
 
         if (readLine !=null){
-            selectionKey.interestOps(selectionKey.interestOps()&~SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            selectionKey.interestOps(selectionKey.interestOps()&~SelectionKey.OP_READ);
 
             processCommand(readLine);
 
         }
 
         if (readBuffer.position()>readBuffer.capacity()/2){
-            System.out.println("recycle read buffer");
+            System.out.println(" rewind read byte buffer ,get more space  "+readBuffer.position());
 
             //压缩，并保留还未处理的数据
             readBuffer.limit(readBuffer.position());
@@ -125,7 +129,21 @@ public class BravoIOHandler implements Runnable{
 
     }
 
-    private void processCommand(java.lang.String readLine) {
-
+    private void processCommand(String readedLine) throws IOException {
+        if(readedLine.startsWith("dir"))
+        {
+            readedLine="cmd  /c "+readedLine;
+            String result=LocalCmandUtil.callCmdAndgetResult(readedLine);
+            writeBuffer.put(result.getBytes("GBK"));
+            writeBuffer.put("\r\nTelnet>".getBytes());
+        }else
+        {
+            for (int i = 0; i < writeBuffer.capacity()-10 ; i++) {
+                writeBuffer.put((byte) ('a' + i % 25));
+            }
+            writeBuffer.put("\r\nTelnet>".getBytes());
+        }
+        writeBuffer.flip();
+        doWriteData();
     }
 }
