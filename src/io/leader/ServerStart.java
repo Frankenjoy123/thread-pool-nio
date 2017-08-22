@@ -5,8 +5,8 @@ import java.io.IOException;
 public class ServerStart {
 
 	public static void main(String[] args) throws IOException {
-		MyNIORector reacot=new MyNIORector(9000);
-		reacot.start();
+		MyNIOReactor reactor=new MyNIOReactor(9000);
+		reactor.start();
 	}
 
 }
