@@ -26,7 +26,7 @@ public class NIOAcceptor {
 
             BravoIOHandler ioHandler = new BravoIOHandler(socketChannel,selectionKey.selector());
 
-            ExecutorServiceUtil.getInstance().submit(ioHandler);
+//            ExecutorServiceUtil.getInstance().submit(ioHandler);
 
         } catch (ClosedChannelException e) {
             e.printStackTrace();
