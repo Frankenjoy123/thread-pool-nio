@@ -45,8 +45,8 @@ public class BravoReactor extends Thread {
 
                 }else if (key.attachment() instanceof BravoIOHandler){
                     BravoIOHandler ioHandler = (BravoIOHandler) key.attachment();
-//                    ExecutorServiceUtil.getInstance().submit(ioHandler);
-                    ioHandler.run();
+                    ExecutorServiceUtil.getInstance().submit(ioHandler);
+//                    ioHandler.run();
                 }
 
             }
